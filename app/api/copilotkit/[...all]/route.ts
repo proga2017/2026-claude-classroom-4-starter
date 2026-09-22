@@ -29,13 +29,13 @@ async function handler(request: Request) {
   });
 
   // A2UI is on so the middleware turns the `showProgress` tool's operations
-  // into a rendered surface, but `injectA2UITool: false` keeps it from adding
-  // `render_a2ui` beside it: the card's tree is authored in
-  // lib/a2ui-progress.ts, and a tool that lets the model design one instead
-  // would be a different feature.
+  // into a rendered surface, and `injectA2UITool: true` has it add `render_a2ui`
+  // beside them, with its usage guidelines, so the model can compose a surface
+  // of its own for anything the fixed card in lib/a2ui-progress.ts does not
+  // cover. Both paths render through the same catalog.
   const runtime = new CopilotRuntime({
     agents: { [TUTOR_AGENT_ID]: agent },
-    a2ui: { injectA2UITool: false },
+    a2ui: { injectA2UITool: true },
   });
 
   return createCopilotRuntimeHandler({ runtime, basePath })(request);

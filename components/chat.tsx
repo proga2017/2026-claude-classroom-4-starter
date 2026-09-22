@@ -28,11 +28,12 @@ export function Chat({
     // production one, so `enableInspector` is left unset deliberately;
     // `showDevConsole` is deprecated and no longer controls it either way.
     // app/globals.css moves its launcher off the header's sign-out button.
-    // `includeSchema: false` because the catalog is here to *render* the card
-    // the tutor's tool already composed, not to let the model design one —
-    // shipping the component schemas as context would only invite that.
+    // `includeSchema: true` ships the catalog's component schemas as agent
+    // context, which is what the runtime's injected `render_a2ui` tool needs to
+    // compose a tree this catalog can actually render; the tutor's own
+    // `showProgress` card stays unaffected either way.
     <CopilotKit
-      a2ui={{ catalog: progressCatalog, includeSchema: false }}
+      a2ui={{ catalog: progressCatalog, includeSchema: true }}
       runtimeUrl="/api/copilotkit"
       credentials="include"
     >

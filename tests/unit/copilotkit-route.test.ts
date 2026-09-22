@@ -15,8 +15,9 @@ const getLocalAgent = vi.fn(
 vi.mock("@ag-ui/mastra", () => ({ MastraAgent: { getLocalAgent } }));
 
 const runtimeHandler = vi.fn(async () => new Response("ok"));
+const CopilotRuntime = vi.fn(function CopilotRuntime(this: unknown) {});
 vi.mock("@copilotkit/runtime/v2", () => ({
-  CopilotRuntime: vi.fn(function CopilotRuntime(this: unknown) {}),
+  CopilotRuntime,
   createCopilotRuntimeHandler: vi.fn(() => runtimeHandler),
 }));
 
@@ -73,6 +74,16 @@ describe("the CopilotKit route", () => {
 
     const { requestContext } = getLocalAgent.mock.calls[0][0];
     expect(requestContext.get("userId")).toBe("user-a");
+  });
+
+  test("leaves CopilotKit's injected A2UI tool switched on", async () => {
+    getSession.mockResolvedValue({ user: { id: "user-a" } });
+
+    await POST(runRequest());
+
+    expect(CopilotRuntime).toHaveBeenCalledWith(
+      expect.objectContaining({ a2ui: { injectA2UITool: true } }),
+    );
   });
 
   test("takes the user id from the session, not from the request", async () => {

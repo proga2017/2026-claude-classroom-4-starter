@@ -92,7 +92,9 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 
 ### A2UI
 
-- The progress card is the fixed-schema path: the tool owns the tree, so the runtime keeps `a2ui` on (for the middleware) with `injectA2UITool: false`, and the provider passes `includeSchema: false` — adding a UI-generating tool is a different feature, not a missing switch.
+- Two paths share the catalog: `showProgress` owns its fixed tree, while the runtime's `injectA2UITool: true` adds `render_a2ui` for surfaces the model composes itself.
+- The flags alone do not make the dynamic path usable: Bartholomew declines everything off-list, so `lib/tutor.ts` carves an explicit drawing exception out of its refusal block — without it a "draw me…" prompt is refused and no tool is ever called.
+- The provider's `includeSchema: true` is load-bearing twice over: it ships the component schemas the model composes against, and the middleware reads the `catalogId` back out of that same context to stamp model-composed surfaces, so switching it off breaks them with "Catalog not found" while the fixed card keeps working.
 - `PROGRESS_CATALOG_ID` has to be the same string on both ends; a mismatch throws "Catalog not found" in the renderer rather than degrading to something unstyled.
 - A catalog definition's bound props must be declared as a `z.union([literal, z.object({ path })])`, and in **zod 3** (`zod/v3`) — the binder decides what to resolve by reading `_def.typeName`, which zod 4 does not have, and an unresolved `{ path }` object reaching a renderer surfaces as React error #31.
 - `createCatalog` types come from the renderer's own nested zod 3, so `components/a2ui-catalog.tsx` casts the definitions once; the two copies are structurally identical at run time, which is why the binder matches on `_def` rather than `instanceof`.
