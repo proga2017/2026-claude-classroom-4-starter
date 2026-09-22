@@ -17,10 +17,11 @@ app/
   layout.tsx, globals.css         root layout; design tokens and the CopilotKit theme bridge
   page.tsx                        `/`, the chat page (session-gated Server Component)
   login/, signup/                 email/password forms (client components)
-  projects/new/                   project wizard scaffold — no agent behind it yet, seam marked in onSubmit
+  projects/new/                   the project wizard: one A2UI card, drawn by the wizard agent, no chat
   device/, consent/               approval pages for the CLI device flow and for MCP OAuth
   api/auth/[...all]/              Better Auth handler
   api/copilotkit/[...all]/        AG-UI bridge: session → Mastra agent → CopilotKit runtime
+  api/wizard/[...all]/            the same bridge for the wizard agent, with A2UI off on the runtime
   api/todos/, api/todos/[id]/     REST API over lib/todo-tools.ts
   api/mcp/                        MCP server over HTTP, OAuth-protected
   .well-known/                    OAuth discovery documents, handed to Better Auth
@@ -35,6 +36,8 @@ lib/
   tutor.ts                        the whole agent: instructions, model, memory, tools
   todo-tools.ts                   every todo query; the agent tools, the REST routes and both MCP servers call it
   a2ui-progress.ts                the progress card: ids, the figures, and the component tree `showProgress` returns
+  wizard.ts                       the wizard agent: its own model, no memory, and the one `setProject` tool
+  a2ui-project.ts                 the project card: ids, the bound field shapes, and the tree `setProject` returns
   db.ts, schema.ts, auth-schema.ts   cached Drizzle connection; app tables; generated auth tables
   auth.ts, auth-config.ts, auth-cli.ts, auth-client.ts   server instance; shared options; auth:generate target; browser client
   api-route.ts                    bearer-only session and JSON helpers for /api/todos
@@ -89,6 +92,8 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 - `@copilotkit/react-core/v2` and `@copilotkit/runtime/v2` (`createCopilotRuntimeHandler`) are the only surfaces that work here; `@copilotkit/react-ui`, the package roots, and the Express/Hono adapters are v1.
 - CopilotKit questions go through the `copilotkit` skill, which sends you to the `copilotkit-docs` MCP server in `.mcp.json`; Mastra questions through the `mastra` skill.
 - Mastra memory is durable in SQLite, but the default `InMemoryAgentRunner` also keeps a bounded replay cache that can restore the browser transcript until eviction or restart — do not mistake either for the other when debugging.
+- The wizard runs on `gemini-3.1-flash-lite` rather than the tutor's model on purpose: a reasoning model works the dates and person-days out while reasoning and then omits them from the tool call, and the card only ever shows what the call carried.
+- `lib/wizard.ts` passes `instructions` as a function so Mastra resolves it per run, which is the only reason today's date is today's in a process that outlives midnight.
 
 ### A2UI
 
@@ -98,13 +103,16 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 - `PROGRESS_CATALOG_ID` has to be the same string on both ends; a mismatch throws "Catalog not found" in the renderer rather than degrading to something unstyled.
 - A catalog definition's bound props must be declared as a `z.union([literal, z.object({ path })])`, and in **zod 3** (`zod/v3`) — the binder decides what to resolve by reading `_def.typeName`, which zod 4 does not have, and an unresolved `{ path }` object reaching a renderer surfaces as React error #31.
 - `createCatalog` types come from the renderer's own nested zod 3, so `components/a2ui-catalog.tsx` casts the definitions once; the two copies are structurally identical at run time, which is why the binder matches on `_def` rather than `instanceof`.
+- The project card is a third path: it is rendered outside any chat, so `components/project-wizard.tsx` does the surface host's job itself — `A2UIProvider` plus `A2UIRenderer`, fed from the tool result in `runAgent`'s `newMessages` — and its runtime carries no `a2ui` config and its provider no `a2ui` prop, either of which would turn the middleware and `render_a2ui` back on.
+- That card names A2UI's own `BASIC_CATALOG_ID`, which is what `A2UIProvider` registers when it is handed no catalog; the basic prop schemas are `.strict()`, so an invented prop is refused rather than ignored, and a `TextField` binds a string while a `ChoicePicker` binds a list — `projectFields` reshapes the project for both.
+- A surface is created once per provider, so repainting means remounting `A2UIProvider` under a new `key`; feeding a second `createSurface` for an id it already holds throws instead.
 
 ### Styling
 
 - Read `.agents/skills/ai-tutor-design/SKILL.md` before touching anything visual, and update it in the same change set when a rule changes.
 - `Source_Sans_3` at 400/600 is the only face loaded, so there is no `font-mono` utility to reach for.
 - The chat's composer, send button and radii are hardcoded CopilotKit utilities that `globals.css` overrides by hand; after a CopilotKit upgrade, a pill-shaped composer means the overrides no longer match.
-- A2UI's basic components carry inline styles and read no theme, so `.a2ui-surface` is squared and recoloured with the only `!important` block in `globals.css`; a custom catalog component is plain React and takes the ramp's utilities directly.
+- A2UI's basic components carry inline styles and read no theme, so `.a2ui-surface` — its card, its inputs and their labels — is squared and recoloured with the only `!important` block in `globals.css`, and that block is deliberately not scoped to `[data-copilotkit]` because the wizard's card renders outside the chat; a custom catalog component is plain React and takes the ramp's utilities directly.
 
 ### Tests
 

@@ -211,10 +211,12 @@ The short version:
 - **Header nav** — one or two `HeaderLink`s in `PageHeader`'s `nav`, left of
   the actions. This is the app naming its other page, not heise's topic nav, so
   keep it to the routes a user actually moves between.
-- **Record card** — a panel of label/value rows (`components/project-wizard.tsx`)
-  with the input that edits it underneath, and a status line under that. Labels
-  go in a fixed left column at `text-sm text-ink-mute`, values at `text-base
-  text-ink`, and an empty value reads "not set" rather than a dash.
+- **Record card** — a panel of the record's fields (`components/project-wizard.tsx`)
+  with the input that drives it underneath, and a status line under that. The
+  fields themselves are an A2UI surface the agent draws, so they arrive with the
+  catalog's inline styles rather than this system's utilities: the ramp reaches
+  them only through the `.a2ui-surface` block in `globals.css`, and a field that
+  looks foreign belongs there, not in a class on the page.
 - **Column header** — `text-sm text-ink-mute`, sentence case, over a rule.
   Not uppercase: heise uses plain sentence case for its table headers, and the
   uppercase-tracked-micro-label is a different design system's tic.

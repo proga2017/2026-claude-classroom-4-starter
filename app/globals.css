@@ -204,18 +204,40 @@ body {
  * The surface's own root element *is* the card (the renderer starts every
  * surface at the component with id `root`), so the child selector is precise
  * rather than a guess.
+ *
+ * Not scoped to `[data-copilotkit]`: that attribute sits on the chat's own
+ * elements, and the project wizard renders its surface outside any chat.
  */
 /* biome-ignore-start lint/complexity/noImportantStyles: an inline style yields to nothing else */
-:root [data-copilotkit] .a2ui-surface [style] {
+:root .a2ui-surface [style] {
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
-:root [data-copilotkit] .a2ui-surface > div {
+:root .a2ui-surface > div {
   margin: 0 !important;
   border-color: var(--edge) !important;
   background: var(--surface) !important;
   color: var(--ink);
+}
+
+/*
+ * The catalog's inputs inherit the surface's text colour but keep the browser's
+ * own field background, which puts light text on white under the dark ramp.
+ * Their border is inline, their label's weight is inline `bold` — a third
+ * weight this system does not load — so both need forcing; the fill does not.
+ */
+:root .a2ui-surface input,
+:root .a2ui-surface textarea {
+  border-color: var(--edge) !important;
+  background: var(--surface);
+  color: var(--ink);
+  accent-color: var(--signal);
+}
+
+:root .a2ui-surface label,
+:root .a2ui-surface strong {
+  font-weight: 600 !important;
 }
 /* biome-ignore-end lint/complexity/noImportantStyles: back to the normal cascade */
 

@@ -4,6 +4,7 @@ import { ProjectWizard } from "@/components/project-wizard";
 import { SignOutButton } from "@/components/sign-out-button";
 import { HeaderLink, PageHeader } from "@/components/ui/page-header";
 import { auth } from "@/lib/auth";
+import { WIZARD_AGENT_ID } from "@/lib/wizard";
 
 export default async function NewProject() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -25,7 +26,7 @@ export default async function NewProject() {
         <SignOutButton />
       </PageHeader>
       <main className="flex flex-1 overflow-hidden bg-ground">
-        <ProjectWizard today={today} />
+        <ProjectWizard agentId={WIZARD_AGENT_ID} today={today} />
       </main>
     </>
   );
