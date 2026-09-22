@@ -57,6 +57,18 @@ export function listTodosFor(db: TodoDb, userId: string, query?: string) {
     .orderBy(asc(todos.seq));
 }
 
+/**
+ * The open items in the same order, which is what the MCP App's to-do form
+ * lists under its field — done items would only be noise there.
+ */
+export function listOpenTodosFor(db: TodoDb, userId: string) {
+  return db
+    .select(todoColumns)
+    .from(todos)
+    .where(and(eq(todos.userId, userId), eq(todos.done, false)))
+    .orderBy(asc(todos.seq));
+}
+
 /** The one insert, shared by the `addTodo` tool and `POST /api/todos`. */
 export async function addTodoFor(db: TodoDb, userId: string, title: string) {
   const [row] = await db

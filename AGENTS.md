@@ -107,6 +107,17 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 - That card names A2UI's own `BASIC_CATALOG_ID`, which is what `A2UIProvider` registers when it is handed no catalog; the basic prop schemas are `.strict()`, so an invented prop is refused rather than ignored, and a `TextField` binds a string while a `ChoicePicker` binds a list — `projectFields` reshapes the project for both.
 - A surface is created once per provider, so repainting means remounting `A2UIProvider` under a new `key`; feeding a second `createSurface` for an id it already holds throws instead.
 
+### MCP Apps
+
+- `open_todo_form`, `submit_todo_form` and their `ui://` resource are registered in `lib/mcp-server.ts` only and stay out of the contract's `mcpTools`, because `ai-tutor mcp --stdio` registers everything in there and a terminal has no iframe to draw a form in.
+- `submit_todo_form` carries `visibility: ["app"]`, which keeps it off the model's tool list: the form's `callServerTool` is the only caller, so an item lands on the list only through the user's own click.
+- Both form tools answer with the same `todoFormResult` shape, and `mcp-apps/todo-form/view.ts` re-declares it by hand because it cannot import a module that reaches the database — change the two together.
+- A refused argument comes back as an `isError` result, not a thrown error, so the form reads its message out of `result.content` and only then falls back to a catch.
+- The view reports a save with `updateModelContext` so the next turn needs no tool call; only the last update reaches the model, so each one carries the whole open list.
+- The `ui://` resource reads `mcp-apps/dist/todo-form.html` through `readView`, so a host sees the form only after `npm run build:views`; an unbuilt view makes the read throw rather than serve an empty page.
+- A view's handlers go on the `App` before `connect`, and the host context that arrives with the handshake is not notified, so `mcp-apps/todo-form/view.ts` reads it once from `getHostContext()` afterwards.
+- `PostMessageTransport` defaults both constructor arguments at run time but its types require them, so a view passes `window.parent` twice.
+
 ### Styling
 
 - Read `.agents/skills/ai-tutor-design/SKILL.md` before touching anything visual, and update it in the same change set when a rule changes.
