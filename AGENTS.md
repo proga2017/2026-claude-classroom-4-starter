@@ -27,12 +27,14 @@ app/
 components/
   chat.tsx                        CopilotKit provider, CopilotChat, and the sidebar in one tree
   todos-sidebar.tsx               read-only mirror of the list; the agent is the browser's only write path
-  todo-tool-calls.tsx             useRenderTool renderers for the three agent tools
+  todo-tool-calls.tsx             useRenderTool renderers for the three list-editing agent tools
+  a2ui-catalog.tsx                the A2UI catalog the provider registers: basic components plus ProgressBar
   project-wizard.tsx, device-approval.tsx, oauth-consent.tsx, sign-out-button.tsx
   ui/                             presentational primitives — extend one instead of repeating its class string
 lib/
   tutor.ts                        the whole agent: instructions, model, memory, tools
   todo-tools.ts                   every todo query; the agent tools, the REST routes and both MCP servers call it
+  a2ui-progress.ts                the progress card: ids, the figures, and the component tree `showProgress` returns
   db.ts, schema.ts, auth-schema.ts   cached Drizzle connection; app tables; generated auth tables
   auth.ts, auth-config.ts, auth-cli.ts, auth-client.ts   server instance; shared options; auth:generate target; browser client
   api-route.ts                    bearer-only session and JSON helpers for /api/todos
@@ -88,11 +90,19 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 - CopilotKit questions go through the `copilotkit` skill, which sends you to the `copilotkit-docs` MCP server in `.mcp.json`; Mastra questions through the `mastra` skill.
 - Mastra memory is durable in SQLite, but the default `InMemoryAgentRunner` also keeps a bounded replay cache that can restore the browser transcript until eviction or restart — do not mistake either for the other when debugging.
 
+### A2UI
+
+- The progress card is the fixed-schema path: the tool owns the tree, so the runtime keeps `a2ui` on (for the middleware) with `injectA2UITool: false`, and the provider passes `includeSchema: false` — adding a UI-generating tool is a different feature, not a missing switch.
+- `PROGRESS_CATALOG_ID` has to be the same string on both ends; a mismatch throws "Catalog not found" in the renderer rather than degrading to something unstyled.
+- A catalog definition's bound props must be declared as a `z.union([literal, z.object({ path })])`, and in **zod 3** (`zod/v3`) — the binder decides what to resolve by reading `_def.typeName`, which zod 4 does not have, and an unresolved `{ path }` object reaching a renderer surfaces as React error #31.
+- `createCatalog` types come from the renderer's own nested zod 3, so `components/a2ui-catalog.tsx` casts the definitions once; the two copies are structurally identical at run time, which is why the binder matches on `_def` rather than `instanceof`.
+
 ### Styling
 
 - Read `.agents/skills/ai-tutor-design/SKILL.md` before touching anything visual, and update it in the same change set when a rule changes.
 - `Source_Sans_3` at 400/600 is the only face loaded, so there is no `font-mono` utility to reach for.
 - The chat's composer, send button and radii are hardcoded CopilotKit utilities that `globals.css` overrides by hand; after a CopilotKit upgrade, a pill-shaped composer means the overrides no longer match.
+- A2UI's basic components carry inline styles and read no theme, so `.a2ui-surface` is squared and recoloured with the only `!important` block in `globals.css`; a custom catalog component is plain React and takes the ramp's utilities directly.
 
 ### Tests
 
@@ -116,3 +126,13 @@ docs/mcp.md                       registering both MCP servers with Claude Code
 - Keep it a map plus non-obvious traps: anything a reader learns by opening the file a line points to belongs in that file's comments, not here.
 - One sentence per bullet, current state only, no history.
 - The two `.tours/*.tour` files anchor by line number into the files they name (`app/page.tsx`, `lib/tutor.ts`, `lib/todo-tools.ts`, the CopilotKit route, `components/`, `scripts/build-views.mjs`, `lib/mcp-app-views.ts`, `mcp-apps/todo-form/`, `package.json`, `.gitignore`, and their tests), so re-check `line` values when those statements move.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

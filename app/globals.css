@@ -195,6 +195,31 @@ body {
 }
 
 /*
+ * A2UI's basic catalog styles its components with inline styles rather than
+ * tokens, so its Card arrives with an 8px radius, a drop shadow and a
+ * hardcoded white fill — none of which survive the dark ramp or this system's
+ * square geometry. Inline styles yield only to `!important`, which is why the
+ * reset is written that way here and nowhere else.
+ *
+ * The surface's own root element *is* the card (the renderer starts every
+ * surface at the component with id `root`), so the child selector is precise
+ * rather than a guess.
+ */
+/* biome-ignore-start lint/complexity/noImportantStyles: an inline style yields to nothing else */
+:root [data-copilotkit] .a2ui-surface [style] {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+:root [data-copilotkit] .a2ui-surface > div {
+  margin: 0 !important;
+  border-color: var(--edge) !important;
+  background: var(--surface) !important;
+  color: var(--ink);
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: back to the normal cascade */
+
+/*
  * The CopilotKit Inspector, development only — a production build never loads
  * it, so this element does not exist there and the rule matches nothing.
  *

@@ -28,8 +28,14 @@ async function handler(request: Request) {
     requestContext: tutorRequestContext(session.user.id),
   });
 
+  // A2UI is on so the middleware turns the `showProgress` tool's operations
+  // into a rendered surface, but `injectA2UITool: false` keeps it from adding
+  // `render_a2ui` beside it: the card's tree is authored in
+  // lib/a2ui-progress.ts, and a tool that lets the model design one instead
+  // would be a different feature.
   const runtime = new CopilotRuntime({
     agents: { [TUTOR_AGENT_ID]: agent },
+    a2ui: { injectA2UITool: false },
   });
 
   return createCopilotRuntimeHandler({ runtime, basePath })(request);

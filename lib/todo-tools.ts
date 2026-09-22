@@ -1,9 +1,11 @@
+import { A2UI_OPERATIONS_KEY } from "@ag-ui/a2ui-toolkit";
 import { RequestContext } from "@mastra/core/request-context";
 import { createTool } from "@mastra/core/tools";
 import { Todo } from "ai-tutor-api-contract";
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { drizzle } from "drizzle-orm/libsql/node";
 import { z } from "zod";
+import { progressEnvelope, progressFigures } from "@/lib/a2ui-progress";
 import type * as schema from "@/lib/schema";
 import { todos } from "@/lib/schema";
 
@@ -138,5 +140,23 @@ export function createTodoTools(db: TodoDb) {
     }),
   });
 
-  return { listTodos, addTodo, setTodoDone };
+  const showProgress = createTool({
+    id: "showProgress",
+    description:
+      "Draw the student a card showing how much of their list is done. Takes no arguments and reports no figures back to you — call it when they ask how they are getting on, then say something brief.",
+    inputSchema: z.object({}),
+    // The result is the card, not a report: the A2UI middleware recognises this
+    // envelope in the tool result and renders it. Left loose because the shape
+    // is the A2UI wire format, which lib/a2ui-progress.ts owns.
+    outputSchema: z.object({
+      [A2UI_OPERATIONS_KEY]: z.array(z.record(z.string(), z.unknown())),
+    }),
+    requestContextSchema,
+    execute: async (_input, { requestContext }) =>
+      progressEnvelope(
+        progressFigures(await listTodosFor(db, requestContext.get("userId"))),
+      ),
+  });
+
+  return { listTodos, addTodo, setTodoDone, showProgress };
 }

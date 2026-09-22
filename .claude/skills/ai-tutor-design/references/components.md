@@ -118,6 +118,22 @@ while the call runs — so a running call is the only blue thing in the transcri
 — then grey once it settles. Encode the state in the verb too ("Adding" →
 "Added"); the colour is a second channel, not the only one.
 
+## Progress bar
+
+A share of something, drawn inside the transcript. The fill is graphite, not
+blue: blue is taken by links and focus rings, and a blue bar reads as a control.
+
+```
+track: h-2 w-full border border-edge bg-raised
+fill:  h-full bg-ink
+label: mt-1 text-ink-soft text-sm tabular-nums
+```
+
+The track needs its own hairline — `raised` on `surface` is too faint to show
+where an almost-empty bar ends. The label repeats the figure in words and is
+also the bar's `aria-valuetext`; a rectangle's length is not a channel a screen
+reader has.
+
 ## Auth card
 
 A single panel centred on the ground, `max-w-sm`, `p-8`, title at
@@ -149,6 +165,15 @@ knowing before you start:
   composer: if it is pill-shaped or white on dark, new hardcoded classes have
   appeared and need the same treatment.
 - Do not restyle its internals beyond that. Anything deeper belongs upstream.
+
+## A2UI surfaces, which are not ours either
+
+A card the agent draws is rendered from A2UI's basic catalog, whose components
+carry **inline styles** and read no theme — an 8px radius, a drop shadow and a
+hardcoded white fill. `globals.css` squares and recolours `.a2ui-surface` with
+the one `!important` block in the file, because nothing else beats an inline
+style. A component you add to the catalog yourself is plain React, so style it
+with the roles like any other primitive and leave the reset alone.
 
 ## What not to build
 
